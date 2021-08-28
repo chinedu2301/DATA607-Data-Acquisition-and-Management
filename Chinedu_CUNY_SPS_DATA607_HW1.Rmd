@@ -1,0 +1,93 @@
+#### **CUNY SPS DATA607 HW1**  
+#### **Name: Chinedu Onyeka;  Date: 8/27/2021**
+
+
+#### Introduction
+This contains data about the story [Marriage isn't Dead - Yet](https://fivethirtyeight.com/features/marriage-isnt-dead-yet/)  
+The values show the proportion of the relevant population that is divorced.  
+I try to explore if divorce rates is related to the level of income. 
+
+#### Load the required libraries
+```{r libraries, results="hide"}
+library(tidyverse)
+library(cowplot) #To access plot_grid which combines multiple plots in a grid
+library(ggthemes)
+```
+
+#### Read File
+This reads the file from github into a tibble (dataframe) and check the head to have an idea of the data
+```{r readfile}
+url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/marriage/divorce.csv"
+data_535 <- read.table(url, header = TRUE, sep = ",") #read the file into a tibble
+head(data_535)
+```
+
+##### Columns
+Explore the data set to see the names of each columns and determine if any needs to be changed
+```{r colnames}
+colnames(data_535)
+```
+
+#### Subset the data
+Use dplyr select function to subset the data by selecting only the columns for ages 35 to 44 and check the head to see the new subset
+```{r subset}
+#Subset the data set to focus on individuals in the age range 35 - 44
+data_age35to44 <- data_535 %>% select(year:rich_3544)
+head(data_age35to44)
+```
+
+#### Column Names
+Check the column names for the new data subset
+```{r colnames_age35to44}
+colnames(data_age35to44)
+```
+
+#### Rename the columns
+Rename the column names of the subset to more intuitive names
+```{r rename_column}
+#Rename the columns to more intuitive names
+new_colname <- c("year", "date", "all", "high_school", "some_college", "bachelor_or_more",
+                 "bachelor_no_grad", "graduate_degree", "poor", "middle_class", "rich")
+colnames(data_age35to44) <- new_colname
+colnames(data_age35to44)
+```
+
+#### Structure
+Check the structure of the data subset. The data subset has 17 rows and 11 columns (variables)
+```{r structure}
+str(data_age35to44)
+```
+
+#### Summary
+Check the summary of the data to see the descriptive statistics of the data
+```{r summary}
+summary(data_age35to44)
+```
+
+#### Exploratory Data Analysis
+Divorce rate based on income
+```{r}
+#plot divorce rates
+g <- ggplot(data = data_age35to44, aes(year)) + labs(y = "Divorce rate")
+pl_poor <- g + geom_smooth(aes(y = poor), se = FALSE) + labs(title = "Divorce rate: Poor") + theme_bw()
+pl_middle <- g +  geom_smooth(aes(y = middle_class), se = FALSE) + labs(title = "Divorce rate: Middle Class") + theme_bw()
+pl_rich <- g + geom_smooth(aes(y = rich), se = FALSE) + labs(title = "Divorce rate: Rich") + theme_bw()
+
+plot_grid(pl_poor, pl_middle, pl_rich)
+```
+
+Divorce rate based on education
+```{r}
+g <- ggplot(data = data_age35to44, aes(year)) + labs(y = "Divorce rate")
+pl_high_school <- g + geom_smooth(aes(y = high_school), se = FALSE) + labs(title = "High School") + theme_bw()
+pl_some_college <- g +  geom_smooth(aes(y = some_college), se = FALSE) + labs(title = "Some College") + theme_bw()
+pl_bachelor_or_more <- g + geom_smooth(aes(y = bachelor_or_more), se = FALSE) + labs(title = "Bachelor or More") + theme_bw()
+pl_bachelor_no_grad <- g + geom_smooth(aes(y = bachelor_no_grad), se = FALSE) + labs(title = "Bachelor no Grad") + theme_bw()
+pl_graduate_degree <- g + geom_smooth(aes(y = graduate_degree), se = FALSE) + labs(title = "Graduate degree") + theme_bw()
+
+
+plot_grid(pl_high_school, pl_some_college, pl_bachelor_or_more, pl_bachelor_no_grad ,pl_graduate_degree)
+```
+
+#### Conclusion
+Considering the mean values of divorce rates, it appears that the divorce rates of individuals in the data set available increases as income level decreases. This means that the data tends to show that poor people are more likely to get a divorce the more priviledged.
