@@ -1,0 +1,64 @@
+
+#### **CUNY SPS DATA607 HW2**
+#### **Name: Chinedu Onyeka; Date: September 2nd, 2021**
+
+#### This assignment demonstrates ability to connect to a database from R  
+
+
+
+Load Libraries
+```{r}
+library(RODBC) #To access MySQL database 
+library(tidyverse)
+```
+
+
+
+Connect to the MySQL database using odbc connect and a dsn
+```{r}
+conn <- odbcConnect("MySQL_DSN")
+```
+
+
+Read the reviewers information from MySQL database into R dataframe
+```{r}
+reviews <- sqlQuery(conn, "SELECT * FROM reviewers")
+head(reviews, n=20)
+```
+```{r}
+str(reviews)
+```
+Check if the dataframe contains any missing values
+```{r}
+anyNA(reviews)
+```
+The missing values are in the rating column
+```{r}
+anyNA(reviews$rating)
+```
+Missing Values : I omit missing values
+```{r}
+# avg_rating <- round(mean(reviews$rating, na.rm = TRUE),0)
+reviews_new <- reviews %>% na.omit()
+```
+
+Check for missingness in the new dataframe
+```{r}
+anyNA(reviews_new)
+```
+Check the head of the new dataframe
+```{r}
+head(reviews_new, n = 20)
+```
+
+Check the structure
+```{r}
+str(reviews_new)
+```
+
+Show all 6 videos
+```{r}
+sqlQuery(conn, "SELECT * FROM videos")
+```
+
+
