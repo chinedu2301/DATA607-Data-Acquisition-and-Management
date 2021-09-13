@@ -1,0 +1,147 @@
+### **CUNY SPS DATA607 HW3**  
+### **Name: Chinedu Onyeka, Date: 9/12/2021**
+
+
+
+#### Load Libraries
+```{r load-libraries, message = FALSE}
+library(tidyverse)
+library(stringr)
+```
+
+### Problem 1:
+
+Using the 173 majors listed in fivethirtyeight.com’s College Majors dataset [https://fivethirtyeight.com/features/the-economic-guide-to-picking-a-college-major/], provide code that identifies the majors that contain either "DATA" or "STATISTICS"
+
+#### **Solution 1:** 
+
+```{r solution-1, message = FALSE}
+url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/college-majors/majors-list.csv"
+college_major <- read_csv(url) #read the data
+```
+
+```{r}
+head(college_major)
+
+major_data_stat <- college_major[str_detect(college_major$Major, pattern = "DATA|STATISTICS"), ]
+major_data_stat
+```
+
+### Problem 2: 
+
+Write code that transforms the data below:
+
+[1] "bell pepper"  "bilberry"     "blackberry"   "blood orange"
+
+[5] "blueberry"    "cantaloupe"   "chili pepper" "cloudberry"  
+
+[9] "elderberry"   "lime"         "lychee"       "mulberry"    
+
+[13] "olive"        "salal berry"
+
+Into a format like this:
+
+c("bell pepper", "bilberry", "blackberry", "blood orange", "blueberry", "cantaloupe", "chili pepper", "cloudberry", "elderberry", "lime", "lychee", "mulberry", "olive", "salal berry")
+
+
+#### **Solution 2:**
+
+```{r}
+text_data <- '[1] "bell pepper"  "bilberry"     "blackberry"   "blood orange"
+
+[5] "blueberry"    "cantaloupe"   "chili pepper" "cloudberry"  
+
+[9] "elderberry"   "lime"         "lychee"       "mulberry"    
+
+[13] "olive"        "salal berry"'
+
+#desired output
+desire_output <- c("bell pepper", "bilberry", "blackberry", "blood orange", "blueberry", "cantaloupe", "chili pepper", "cloudberry", "elderberry", "lime", "lychee", "mulberry", "olive", "salal berry")
+
+#Remove multiple white space from left and and right of the strings
+text_data_no_space <- str_squish(text_data)
+writeLines(text_data_no_space)
+
+```
+```{r}
+#Extract All strings
+text_extract <- unlist(str_extract_all(text_data_no_space, pattern = "[[:alpha:]]+\\s[[:alpha:]]+|[[:alpha:]]+"))
+```
+
+```{r}
+#Combine the strings into a vector
+text <- str_c(text_extract, sep = '"')
+text
+```
+Compare the desired output to the output
+```{r}
+#Check if the output is the same as the desired output
+identical(text, desire_output)
+```
+The result of the comparison shows that both are the same and a logical "TRUE" was returned.
+
+
+### Problem 3:
+
+Describe, in words, what these expressions will match:  
+
+(a) (.)\1\1  
+(b) "(.)(.)\\\\2\\\\1"  
+(c) (..)\1  
+(d) "(.).\\\\1.\\\\1"  
+(d) "(.)(.)(.).*\\\\3\\\\2\\\\1"
+
+#### **Solution 3:**  
+
+(3a) (.)\1\1 : This lacks a second backslash and hence will return an error and no match.
+
+(3b) "(.)(.)\\\\2\\\\1" : This will return match for the first (1^st^) character, the second (2^nd^) character, and the second (2^nd^) character followed by the first (1^st^) character again. Basically, this returns matches for first two characters and the same two characters in reverse order as in "daad" or in the example shown below.
+```{r}
+str_view_all(stringr::words, pattern = "(.)(.)\\2\\1", match = TRUE)
+```
+
+(3c) (..)\1 : This will also return an error as it lacks a second backslash. The correct version "(..)\\\\1" will return characters in the first group twice. Any two characters that appear will be returned again.
+```{r}
+str_view_all(fruit, "(..)\\1", match = TRUE)
+```
+
+(3d) "(.).\\\\1.\\\\1" : This will return matches where the first character occurs three (3) times with any other single character in between. In the fruit example below, "a" occurs three times with "n" in between any occurrence of "a". The second match "papaya" shows that the match need not be the same letter in between but any other single character.
+```{r}
+str_view_all(fruit, "(.).\\1.\\1", match = TRUE)
+```
+
+```{r}
+str_view_all(words, "(.).\\1.\\1", match = TRUE)
+```
+
+
+(3e) "(.)(.)(.).*\\\\3\\\\2\\\\1": This will return matches where a group of three (3) characters appear again but in reverse order with a certain number of characters in between them. In the example below "par" has characters "ag" in between the reverse occurrence "rap"
+```{r}
+str_view_all(words, "(.)(.)(.).*\\3\\2\\1", match = TRUE)
+```
+
+### Problem 4:
+
+Construct regular expressions to match words that:  
+Start and end with the same character.  
+Contain a repeated pair of letters (e.g. "church" contains "ch" repeated twice.)  
+Contain one letter repeated in at least three places (e.g. "eleven" contains three "e"s.)  
+
+
+#### **Solution 4:**
+
+*Start and end with the same character*
+```{r}
+str_view_all(words, "^(.).*\\1$", match = TRUE)
+```
+
+*Contain a repeated pair of letters (e.g. "church contains "ch" repeated twice.)*
+```{r}
+str_view_all(fruit, "(..)\\1", match = TRUE)
+```
+
+*Contain one letter repeated in at least three places (e.g. "eleven" contains three "e".)*
+```{r}
+str_view_all(words, "([a-zA-Z]).*\\1.*\\1", match = TRUE)
+```
+
