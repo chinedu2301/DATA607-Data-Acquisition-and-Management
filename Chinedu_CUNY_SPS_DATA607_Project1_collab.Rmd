@@ -1,0 +1,237 @@
+## **CUNY SPS DATA607 Project 1**
+### **Author: Chinedu Onyeka**
+#### **Date: September 18th, 2021**  
+
+##### **Collaborators: Leticia Salazar, Tyler Baker**
+ 
+
+
+##### **Summary**  
+*In this project, we used regular expressions to extract player names, their state, total points and prerating. Also, we extracted and computed the average prerating of the individual player's opponents and write the output to a csv file called tournament.csv*
+
+Load the required libraries
+```{r load-libraries, message = FALSE}
+library(tidyverse)
+library(stringr)
+```
+
+
+Read the file
+```{r read-file}
+url = "https://raw.githubusercontent.com/chinedu2301/DATA607-Data-Acquisition-and-Management/main/tournamentinfo.txt"
+text <- read.table(url, sep = ",", skip = 4)
+text <- text$V1
+
+head(text, n = 11)
+```
+Remove all dashes
+```{r}
+text <- str_remove_all(text, pattern = "-")
+head(text, n = 11)
+
+```
+Remove all empty spaces
+```{r}
+text <- str_replace_all(text, pattern = "\\s+", replacement = " " )
+head(text, n = 11)
+```
+**Extract the Player Names**
+
+```{r}
+p_name <- unlist(str_extract_all(text, pattern = "\\| [:alpha:]+\\s*[:alpha:]+ (\\w+)?\\s*(\\w+)?"))
+p_name
+```
+Remove the pipe "|" and the space before the names
+```{r}
+pl_name <- unlist(str_remove_all(p_name, pattern = "\\| "))
+pl_name
+```
+
+
+**Extract Player's State**
+```{r}
+player_state <- unlist(str_extract_all(text, pattern = " [:alpha:]{2}\\s\\| "))
+player_state
+```
+Remove the "|" and spaces
+```{r}
+player_state <- unlist(str_remove_all(player_state, pattern = "\\s\\| "))
+player_state <- unlist(str_remove_all(player_state, pattern = " "))
+player_state
+```
+**Extract Player's Total Number of Points**
+```{r}
+total_points <- unlist(str_extract_all(text, pattern = "[:digit:]\\.[:digit:]"))
+total_points
+```
+Change the Player's Total Points to numeric
+```{r}
+player_total_points <- map_dbl(total_points, as.numeric)
+player_total_points
+```
+
+**Extract Player's Pre-Rating**
+```{r}
+players_prerating <- unlist(str_extract_all(text, pattern = "R:\\s+[:digit:]+"))
+players_prerating
+```
+Remove the "R: "
+```{r}
+players_prerating <- unlist(str_remove_all(players_prerating, pattern = "R: "))
+players_prerating
+```
+Change players_prerating type to numeric
+```{r}
+player_prerating <- map_dbl(players_prerating, as.numeric)
+player_prerating
+```
+
+**Extract Average Opponent Pre-Rating**
+```{r}
+opponent <- unlist(str_extract_all(text, pattern = "\\|[0-9].*"))
+opponent
+```
+Looking at this result, we see that some players do not have opponents in all 7 rounds. To make extracting the opponent numbers easier, We replace |B |, |U |, |X |, and |H | with |R 0| to maintain the same format as others.
+
+```{r}
+oppo <- unlist(str_replace_all(opponent, pattern = "\\|[BUXH] ", replacement = "\\|R 0"))
+oppo
+```
+Remove the first part containing the total points as well as the letters and the pipe symbol
+
+```{r}
+#Remove the first part containing the total points
+oppon <- unlist(str_remove_all(oppo, pattern = "\\|\\d\\.\\d\\s"))
+
+#Remove the Letters
+oppone <- unlist(str_remove_all(oppon, pattern = "[:alpha:]"))
+
+#Remove the pipe "|"
+oppone <- unlist(str_remove_all(oppone, pattern = "\\|"))
+oppone
+```
+```{r}
+opponen <- unlist(str_extract_all(oppone, pattern = " [:digit:]{1,2}"))
+opponen
+```
+Remove the spaces before the numbers
+```{r}
+opponen_char <- unlist(str_remove_all(opponen, pattern = " "))
+opponen_char
+```
+Convert these numbers to numeric
+```{r}
+opponen_dig <- opponen_char %>% map_dbl(as.numeric)
+opponen_dig
+```
+The next task is to replace this opponent Vectors with their corresponding preratings.  
+
+```{r}
+#check the structure of the vectors in question to make sure they are numeric
+str(opponen_dig)
+str(player_prerating)
+```
+Transform the opponent_dig to a matrix and then to dataframe
+```{r}
+opponent_matrix <- matrix(opponen_dig, byrow = TRUE, ncol = 7)
+opponent_matrix
+```
+```{r}
+opponent_headers <- c("O1","O2", "O3", "O4", "O5", "O6", "O7")
+opponent_df <- as.data.frame(opponent_matrix)
+colnames(opponent_df) <- opponent_headers
+head(opponent_df, n = 10)
+```
+
+Transform the player pre rating to a matrix and then to a dataframe
+```{r}
+#Transform to matrix
+player_pre_rating_matrix <- matrix(player_prerating, byrow = TRUE)
+
+#Transform to dataframe
+pre_rating_header <- "rating"
+pre_rating <- as.data.frame(player_pre_rating_matrix, row.names = 1:length(player_pre_rating_matrix))
+colnames(pre_rating) <- pre_rating_header
+head(pre_rating, n = 10)
+```
+Add another column called rating_index for the player number corresponding to each prerating
+```{r}
+rating_index <- 1:64
+rating_index <- as.data.frame(rating_index)
+pre_rating <- cbind(rating_index, pre_rating)
+head(pre_rating, n = 10)
+```
+
+
+Write a for loop to replace the opponent numbers in opponent_df dataframe with their corresponding player rating.
+
+```{r}
+for (row in 1:nrow(opponent_df)){
+  for (col in 1:ncol(opponent_df)){
+    if (opponent_df[row, col] != 0){
+      opponent_df[row, col] = pre_rating$rating[opponent_df[row,col]]
+    }else {
+      opponent_df[row,col] = NA
+    }
+  }
+}
+head(opponent_df, n = 10)
+```
+
+```{r}
+sum_opponent_df <- opponent_df %>% mutate(rowSums(opponent_df, na.rm = TRUE))
+head(sum_opponent_df, n = 10)
+```
+Compute the average oponnent prerating for each row.
+```{r}
+avg_opponent <- opponent_df %>% mutate(round(rowMeans(opponent_df, na.rm = TRUE),0))
+head(avg_opponent, n = 10)
+```
+Rename the column names
+```{r}
+opponent_headers_withAvg <- c("O1","O2", "O3", "O4", "O5", "O6", "O7", "Average_opponent_rating")
+colnames(avg_opponent) <- opponent_headers_withAvg
+head(avg_opponent, n = 4)
+```
+Extract the Average_opponent_rating from this dataframe into a standalone vector.
+```{r}
+opponent_avg_prerating <- avg_opponent$Average_opponent_rating
+opponent_avg_prerating
+```
+Merge the player_names, player_state, player_total_points, player_prerating, and opponent_avg_prerating into a single data frame.
+
+```{r}
+name <- pl_name
+state <- player_state
+points <- player_total_points
+prerating <- player_prerating
+avg_opponent_prerating <- opponent_avg_prerating
+tournament <- data.frame(name, state, points, prerating, avg_opponent_prerating)
+tournament
+```
+Write the tournament data frame to a csv file.
+```{r}
+write.csv(tournament, file = "tournament.csv")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
