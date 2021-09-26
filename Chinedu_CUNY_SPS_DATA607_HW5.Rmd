@@ -1,5 +1,7 @@
 ### **CUNY SPS DATA607 HW5**
-### **Name: Chinedu Onyeka; Date: September 25th, 2021**
+### **Name: Chinedu Onyeka** 
+### **Collaborator: Coffy Andrews**
+### **Date: September 25th, 2021**
 
 
 ```{r setup, include=FALSE}
