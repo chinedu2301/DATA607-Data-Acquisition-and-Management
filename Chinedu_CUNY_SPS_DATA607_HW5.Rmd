@@ -1,0 +1,165 @@
+### **CUNY SPS DATA607 HW5**
+### **Name: Chinedu Onyeka; Date: September 25th, 2021**
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load the required libraries
+```{r load-data, message = FALSE}
+library(tidyverse)
+library(stringr)
+```
+
+
+Read the file
+```{r read-file, message = FALSE}
+#Read the file
+url <- "https://raw.githubusercontent.com/chinedu2301/DATA607-Data-Acquisition-and-Management/main/israeli_vaccination_data_analysis_start.csv"
+israel_vac_data <-  read_csv(url)
+israel_vac_data <- israel_vac_data %>% slice(1:6)
+```
+Look at the data
+```{r}
+israel_vac_data
+```
+
+
+**Clean the Data**
+
+```{r}
+# Replace headers (column names) with more meaningful names
+headers <- c("Age", "Not_Vacc", "Full_Vacc", "Sev_Not_Vacc_per100k", "Sev_Full_Vacc_per100k", "Efficacy vs. Severe" )
+colnames(israel_vac_data) <- headers
+israel_vac_data
+```
+We actually only need rows 2 to 5 of this dataset.
+
+```{r}
+israel_vac_data <- israel_vac_data %>% slice(2:5)
+israel_vac_data
+```
+
+Subset the israel_vac_data dataset to obtain only the population vaccinated rows
+```{r}
+pop_vac <- israel_vac_data[c(1,3),]
+pop_vac
+```
+Subset the israel_vac_data dataset to obtain only the percent vaccinated rows
+
+```{r}
+pct_vac <- israel_vac_data[c(2,4),]
+pct_vac_headers <- c("Age", "Not_Vacc_pct", "Full_Vacc_pct", "Sev_Not_Vacc_per100k_pct", "Sev_Full_Vacc_per100k_pct", "Efficacy vs. Severe")
+colnames(pct_vac) <- pct_vac_headers
+pct_vacc <- pct_vac %>% select(Not_Vacc_pct:Sev_Full_Vacc_per100k_pct)
+pct_vacc
+```
+
+
+Combine the two dataframes (pop_vac and pct_vacc) to get a dataframe of the israel vaccination data
+
+```{r}
+israel_vaccination_data <- cbind(pop_vac, pct_vacc)
+israel_vaccination_data
+```
+
+Israel Vaccination rate
+
+```{r}
+isr <- israel_vaccination_data %>% select(Age, Not_Vacc, Not_Vacc_pct, Full_Vacc, Full_Vacc_pct, Sev_Not_Vacc_per100k, Sev_Not_Vacc_per100k_pct, Sev_Full_Vacc_per100k, Sev_Full_Vacc_per100k_pct, `Efficacy vs. Severe`)
+isr
+```
+
+Remove the non-numeric symbols
+```{r}
+isr$Not_Vacc_pct <- isr$Not_Vacc_pct %>% str_remove_all(pattern = "%")
+isr$Full_Vacc_pct <- isr$Full_Vacc_pct %>% str_remove_all(pattern = "%")
+isr$Not_Vacc <- isr$Not_Vacc %>% str_remove_all(pattern = ",")
+isr$Full_Vacc <- isr$Full_Vacc %>% str_remove_all(pattern = ",")
+isr
+```
+Convert the columns to numeric
+```{r}
+isr_age <- isr %>% select(Age)
+dat <- isr %>% select(-Age)
+dat_df <- unlist(sapply(dat, as.numeric)) #convert all the columns except the Age column to numeric
+dat_daf <- as.data.frame(dat_df)
+israel_Vax <- cbind(isr_age, dat_daf)
+israel_Vax
+```
+Compute the Sev_Not_Vacc_per100k_pct and Sev_Full_Vacc_per100k_pct
+```{r}
+israel_Vax <- israel_Vax %>% mutate(Sev_Not_Vacc_per100k_pct = round((Sev_Not_Vacc_per100k/Not_Vacc)*100000,1), 
+                             Sev_Full_Vacc_per100k_pct = round((Sev_Full_Vacc_per100k/Full_Vacc)*100000,1))
+israel_Vax
+```
+
+Compute the Efficacy vs. Severe   
+Efficacy vs. Severe = 1 - (Sev_Full_Vacc_per100k_pct/Sev_Not_Vacc_per100k_pct)
+
+```{r}
+israel_Vaxx <- israel_Vax %>% mutate(`Efficacy vs. Severe` = round((1 - (Sev_Full_Vacc_per100k_pct/Sev_Not_Vacc_per100k_pct)),3)*100)
+
+israel_Vaxx
+```
+
+**Question 1:** Do you have enough information to calculate the total population? What does this total population represent?  
+
+*Solution 1:*
+
+Compute population:
+```{r}
+ques1 <- israel_Vaxx %>% select(Age, Not_Vacc, Full_Vacc)
+ques1 <- ques1 %>% mutate(Population = Not_Vacc + Full_Vacc)
+ques1_pop_pct <- israel_Vaxx %>% transmute(Pop_pct = Not_Vacc_pct + Full_Vacc_pct)
+ques1 <- cbind(ques1, ques1_pop_pct)
+#compute estimated population per age group
+est_pop <- ques1 %>% transmute(Est_population = Population/(Pop_pct/100))
+ques1 <- cbind(ques1, est_pop)
+ques1
+```
+Compute the  total estimated population:
+```{r}
+Est_total_population <- round(sum(ques1$Est_population), 0)
+paste0("The estimated total population from the given data is ", Est_total_population)
+```
+Background Knowledge:  
+
+a) Israel's total population is about 9216900 according to [WorldBank](https://data.worldbank.org/indicator/SP.POP.TOTL?locations=IL) data.  
+
+b) Eligible to receive vaccine in Israel: From [february](https://www.usnews.com/news/health-news/articles/2021-02-04/all-israelis-over-16-are-eligible-for-coronavirus-vaccine) 2021, only those who are 16 years and older could get covid vaccinated in Israel, but by August 2021, the covid vaccines have been made available to those age 12 and older.  
+
+c) To be fully vaccinated in Israel means that 14 days have elapsed after completing the series (2 doses) of either the Pfizer or Moderna vaccines as those are the only covid-19 vaccines currently [approved](https://covid19.trackvaccines.org/country/israel/) in Israel.  
+
+*From the background information, we see that the total population of Israel is about 9.2million while the total population computed from the vaccination data is about 7.2million. There is a discrepancy of about 2million(about 22% of Israel's population) not accounted for in the vaccination data provided, and there is no way for us to calculate that extra 2million from the given data. Hence, the given data does not provide enough information to calculate the total population of Israel. Also, we do not know if those who are partially vaccinated were not included in this study or if they have been counted as Not Vaccinated*  
+
+*In my opinion, the total population of about 7.2million calculated from the given data would represent the total population of those who are eligible to receive the vaccine. The data for those 50 and below may not have accounted for those below 12 or 16 years old who are not eligible to receive the covid-19 vaccine. Hence, the missing 2million (22% of the total population of Israel).*  
+
+*According to the [Jewish Virtual library](https://www.jewishvirtuallibrary.org/latest-population-statistics-for-israel), Israel has a relatively younger population compared to other Western countries with about 28% of the population between 0 - 14 years old. This information provides more insight on the missing 22% from the given data which could further support that it would be the population aged 0 - 12 years old who are not eligible to receive the vaccine.*  
+
+**Question 2:** Calculate the Efficacy vs. Disease; Explain your results:  
+
+*Solution 2: *  
+From the values computed above:
+```{r}
+israel_efficacy_severe <- israel_Vaxx %>% select(Age, Not_Vacc, Full_Vacc, `Efficacy vs. Severe`)
+israel_efficacy_severe
+```
+This means that the Efficacy vs. Severe is higher for those below 50 (92.3%) compared to those above 50 (85.2%) which implies that the vaccine is more effective for those 50 and below.
+
+**Question 3: ** From your calculation of efficacy vs. disease, are you able to compare the rate of severe cases in unvaccinated to vaccinated individuals?  
+
+*Solution 3: *  
+Yes I am able to compare the rate of severe cases in unvaccinated individuals to vaccinated individuals. 
+The Efficacy vs. Severe basically represents the percent reduction in severe infection in the vaccinated group relative to the unvaccinated. From the severe rates, we  see that those who are unvaccinated are more likely to have severe cases (hospitalized) compared to those who are vaccinated for both age groups.
+
+
+
+
+
+
+
+
+
+
