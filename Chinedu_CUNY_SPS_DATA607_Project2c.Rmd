@@ -1,0 +1,160 @@
+---
+title: 'CUNY SPS DATA607 Project2: Dataset3'
+output:
+  html_document:
+    df_print: paged
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+### **Name: Chinedu Onyeka, Date: October 3rd, 2021**
+ 
+##### **Objective:** To determine the percentage of west nile virus disease cases reported to cdc from 1999 to 2019 that turned neuro-invasive by states in the US.  
+
+##### **Data Source:** [CDC](https://www.cdc.gov/westnile/statsmaps/cumMapsData.html) 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Questions: ** The questions for this data set was provided by Victoria McEleney  
+West Nile virus disease cases reported to CDC by state of residence, 1999-2019  
+West Nile virus neuroinvasive disease cases reported to CDC by state of residence, 1999-2019  
+The totals per state & per year are already calculated, but the means are yet to be calculated.  
+The year columns could be pivoted longer and the 2 tables could be combined. Percent of positive cases that developed into neuroinvasive disease could be calculated (per year / per state).  
+
+*Load the libraries*
+```{r load-library, message=FALSE}
+library(tidyverse)
+```
+
+*Load the data*
+```{r load-file, message=FALSE}
+url_westnile_disease <- "https://raw.githubusercontent.com/chinedu2301/DATA607-Data-Acquisition-and-Management/main/West-Nile-virus-disease-cases-by-state_1999-2019-P.csv"
+url_westnile_neuro <- "https://raw.githubusercontent.com/chinedu2301/DATA607-Data-Acquisition-and-Management/main/West-Nile-virus-neuroinvasive-disease-cases-by-state_1999-2019-P.csv"
+
+westnile_disease <- read_csv(url_westnile_disease)
+westnile_neuro <- read_csv(url_westnile_neuro, skip = 1)
+```
+
+*Check the each of the datasets*
+```{r}
+#View the west nile disease dataset
+westnile_disease
+```
+```{r}
+#View the west nile disease cases that turned neuro invasive
+westnile_neuro
+```
+These two data sets are wide and contain a lot of unnecessary rows. Hence, we subset the data sets to contain only the rows for each state and then transform the data sets from wide to long.  
+
+*Subset the data sets*  
+
+```{r}
+#slice the west nile disease dataset
+westnile_disease <- westnile_disease %>% slice(1:52)
+westnile_disease
+```
+```{r}
+#slice the west nile neuro invasive dataset
+westnile_neuro <- westnile_neuro %>% slice(1:52)
+westnile_neuro
+```
+*Transform the tables from wide to long*
+
+```{r}
+westnile_d <- westnile_disease %>% select(-Total) %>% 
+  gather(key = "Year", value = "cases", -State) %>% arrange(State)
+westnile_n <- westnile_neuro %>% select(-Total) %>% 
+  gather(key = "Year", value = "neuroinvasive_cases", -State) %>% arrange(State)
+```
+
+*View the new long data sets*  
+
+West nile disease cases
+```{r}
+westnile_d
+```
+West nile neuro invasive cases
+```{r}
+westnile_n
+```
+*Combine the two data sets*
+```{r}
+westnile <- cbind(westnile_d, neuroinvasive_cases = westnile_n$neuroinvasive_cases)
+westnile
+```
+*Find the average (mean) cases for each state: Group by State*
+
+```{r}
+westnile_mean <- westnile %>% group_by(State) %>% 
+  summarise(Avg_cases = round(mean(cases),0), Avg_neuroinvasive_cases = round(mean(neuroinvasive_cases),0))
+westnile_mean
+```
+
+*Find percentage of cases that turn neuroinvasive*  
+```{r}
+westnile_percent_neuro <- westnile_mean %>% 
+  mutate(percent_neuroinvasive = round((Avg_neuroinvasive_cases/Avg_cases)*100, 2))
+westnile_percent_neuro
+```
+*Replace the NaN values with NA*
+```{r}
+westnile_percent_neuro$percent_neuroinvasive[is.nan(westnile_percent_neuro$percent_neuroinvasive)] <- NA
+westnile_percent_neuro
+```
+Construct a bar graph
+```{r}
+westnile_percent_neuro %>% top_n(30) %>% ggplot(aes(reorder(State, percent_neuroinvasive), percent_neuroinvasive)) + 
+  geom_col(fill = "brown") + coord_flip() + xlab("") + labs(title = "Percentage of West Nile virus cases that turned neuroinvasive")
+```
+
+*Check summary for the percent_neuroinvasive cases by state*  
+```{r}
+summary(westnile_percent_neuro$percent_neuroinvasive)
+```
+*Find the average (mean) cases for each state: Grouping by Year*
+```{r}
+westnile_month <- westnile %>% group_by(Year) %>% 
+  summarise(Avg_cases = round(mean(cases),0), Avg_neuroinvasive_cases = round(mean(neuroinvasive_cases),0))
+westnile_percent_month <- westnile_month %>% 
+  mutate(percent_neuroinvasive = round((Avg_neuroinvasive_cases/Avg_cases)*100, 2))
+#Replace NaN values with NA
+westnile_percent_month$percent_neuroinvasive[is.nan(westnile_percent_month$percent_neuroinvasive)] <- NA
+westnile_percent_month
+```
+*Plot a graph of percent neuroinvasive by year*
+```{r}
+ggplot(westnile_percent_month, aes(Year, percent_neuroinvasive)) + geom_col(fill = "brown") + 
+  theme_bw() + labs(title = "Percentage of Neuroinvasive westnile virus cases by year")
+```
+
+*Summary statistics for the percentage of west nile virus cases that turned neuroinvasive per year*
+```{r}
+summary(westnile_percent_month$percent_neuroinvasive)
+```
+
+
+**Conclusion:** *We can see that using the average westnile virus cases from 1999 to 2019 for each state, the median percentage of the westnile virus cases that turn neuroinvasive is about 60% for each state. Also, for each year since 1990, about 60% of westnile virus cases turned neuroinvasive.*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

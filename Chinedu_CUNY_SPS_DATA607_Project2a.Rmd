@@ -1,0 +1,99 @@
+---
+title: 'CUNY SPS DATA607 Project2: Dataset1'
+output:
+  html_document:
+    df_print: paged
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+### **Name: Chinedu Onyeka, Date: October 1st, 2021**
+
+ 
+#### **Objective:** To understand the trend in global child mortality from the 1980's  
+
+#### **Data Source:** [UN Inter-agency Group for Child Mortality Estimation](https://sejdemyr.github.io/r-tutorials/basics/data/RatesDeaths_AllIndicators.xlsx)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message = FALSE}
+library(tidyverse)
+```
+
+Read the file
+```{r message=FALSE}
+url <- "https://raw.githubusercontent.com/chinedu2301/DATA607-Data-Acquisition-and-Management/main/dataset1_Child_Mortality.csv"
+child_mort <- read_csv(url, skip = 6)
+```
+```{r}
+head(child_mort, n = 10)
+```
+
+We don't need the ISO code and we need just the median estimate for each country
+```{r}
+child_mort <- child_mort %>% select(CountryName:Neonatal.Deaths.2015) %>% filter(`Uncertainty bounds*` == "Median")
+head(child_mort)
+```
+```{r}
+dim(child_mort)
+```
+This data-set is now 195 x 399 which is a lot of columns. More columns than rows.  
+
+Transform from wide to long
+```{r}
+#Gather all Death cases into Type and Deaths.
+child_mort <- child_mort %>% gather(key = "Type", value = "Deaths",
+                      U5MR.1950:Neonatal.Deaths.2015, na.rm = TRUE)
+
+head(child_mort, n = 10)
+```
+```{r}
+#check the dimensions for this long table
+dim(child_mort)
+```
+We now have only 5 columns and each row is for a country for each type of infant mortality and for each year.  
+
+
+Separate the "Type" column:
+
+```{r}
+child_mort <- child_mort %>% separate("Type", into = c("Type", "Year")) %>%
+  select(CountryName, Type:Deaths) %>% arrange(CountryName)
+head(child_mort, n = 20)
+```
+Sub setting to data from 1990 to 2015
+
+```{r}
+child_m <- child_mort %>% filter(Year %in% 1980:2015) %>% 
+  mutate(Year = as.numeric(Year))
+head(child_m, n = 10)
+```
+
+
+```{r}
+tail(child_m, n = 10)
+```
+Adding all categories of child mortality rates for each country,
+
+```{r}
+country_child_deaths <- child_m %>% group_by(CountryName) %>% 
+  summarise(Total_Child_Deaths = sum(Deaths))
+head(country_child_deaths, n = 20)
+```
+```{r}
+country_child_deaths_year <- child_m %>% group_by(Year) %>% 
+  summarise(Total_Child_Deaths = sum(Deaths))
+country_child_deaths_year
+```
+```{r}
+ggplot(data = country_child_deaths_year, aes(Year, Total_Child_Deaths)) + geom_point() +
+  geom_smooth() + labs(title = "Total Child mortality vs Year") + ylab("Total Child Mortality") +
+  theme_bw()
+```
+
+**Conclusion**: From the chart, we can see that the total child mortality per year around the world has significantly declined over the years since the 1980's.
+
+
+

@@ -1,0 +1,110 @@
+---
+title: 'CUNY SPS DATA607 Project2: Dataset2'
+output:
+  html_document:
+    df_print: paged
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+### **Name: Chinedu Onyeka, Date: October 3rd, 2021**
+
+ 
+#### **Objective:** To determine if study time impacts test scores from a sample of 11 students 
+
+#### **Data Source:** [Eric Lehmphul](https://raw.githubusercontent.com/SaneSky109/DATA607/main/Project_2/Data/DATA607_discussion5.csv)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE}
+library(tidyverse)
+```
+
+Read the file
+```{r read-file, message=FALSE}
+url <- "https://raw.githubusercontent.com/chinedu2301/DATA607-Data-Acquisition-and-Management/main/test_scores"
+test_scores <- read_csv(url)
+```
+```{r}
+test_scores
+```
+
+
+Separate the columns
+```{r}
+#Separate the  columns
+test_scores <- test_scores %>% separate(`Test1, TimeStudiedTest1`, 
+                                        into = c("Test1", "TimeStudiedTest1"))
+test_scores <- test_scores %>% separate(`Test2, TimeStudiedTest2`, 
+                                        into = c("Test2", "TimeStudiedTest2"))
+test_scores <- test_scores %>% separate(`Test3, TimeStudiedTest3`, 
+                                        into = c("Test3", "TimeStudiedTest3"))
+#select the columns in order
+test <- test_scores %>% select(Student, Test1, Test2, Test3, 
+                               TimeStudiedTest1, TimeStudiedTest2, TimeStudiedTest3)
+test
+```
+Convert all the columns from Test1 to TimeStudiedTest3 to numeric
+```{r}
+test_student <- test %>% select(Student)
+test_others <- test %>% select(-Student)
+dat_df <- unlist(sapply(test_others, as.numeric)) #convert all the columns except the Student column to numeric
+dat_daf <- as.data.frame(dat_df)
+test_results <- cbind(test_student, dat_daf)
+# Replace NA with 0
+test_results <- test_results %>% replace(is.na(.), 0)
+test_results
+```
+Gather the Tests and the time studied
+```{r}
+test_resultsa <- test_results %>% select(Student:Test3)
+#gather Test1 to Test 3 into Test
+test_resultsa <- test_resultsa %>% gather(key = "Test", value = "Score", Test1:Test3) %>% arrange(Student)
+#gather StudyTimeTest1 to StudyTimeTest 3 into TestType
+test_resultsb <- test_results %>% select(Student, TimeStudiedTest1:TimeStudiedTest3)
+test_resultsb <- test_resultsb %>% gather(key = "TestType", value = "StudyTime",
+                                          TimeStudiedTest1:TimeStudiedTest3) %>% arrange(Student) %>% select(-Student)
+test_results_long <- cbind(test_resultsa, test_resultsb)
+test_results_long <- test_results_long %>% select(-TestType)
+test_results_long
+```
+We now have a long table with four(4) columns: Student, Test, Score and StudyTime.  
+
+Next we find the average test score and average study time for each student.  
+
+```{r}
+test_res <- test_results_long %>% group_by(Student) %>%
+  summarise(Avg_Score = round(mean(Score), 0), Avg_StudyTime = round(mean(StudyTime),0))
+student_test_results <- cbind(test_res, Gender = test_scores$Gender) %>% 
+  select(Student, Gender, Avg_Score, Avg_StudyTime)
+student_test_results
+```
+Plot a scatter plot of the Avg_StudyTime vs Avg_Score
+
+```{r}
+base <- ggplot(data = student_test_results, aes(Avg_StudyTime, Avg_Score)) + geom_point() +
+  geom_smooth(se = FALSE) + ylab("Average Score") + xlab("Average Study Time") + theme_bw() + 
+  labs(title = "Average Test Score vs Average Study Time")
+base
+```
+
+Find correlation
+```{r}
+x <- student_test_results$Avg_StudyTime
+y <- student_test_results$Avg_Score
+cor.test(x, y)
+```
+**Conclusion: ** *From the scatter plot above and from the correlation coefficient of about 0.7 calculated, we can infer that as Average Study Time of students increases, their corresponding Average Test Score increases. Hence, we can say that study time impacts test scores. *
+
+
+
+
+
+
+
+
+
+
+
