@@ -7,7 +7,8 @@ output:
     theme: cayman
     highlight: github
 ---
-### **Name: Chinedu Onyeka, Date: October 1st, 2021**
+### **Name: Chinedu Onyeka, Date: October 1st, 2021**  
+#### **Collaborators: Tyler Baker, Leticia Salazar**
 
  
 #### **Objective:** To understand the trend in global child mortality from the 1980's  
