@@ -7,7 +7,8 @@ output:
     theme: cayman
     highlight: github
 ---
-### **Name: Chinedu Onyeka, Date: October 3rd, 2021**
+### **Name: Chinedu Onyeka, Date: October 3rd, 2021**  
+#### **Collaborators: Peter Phung, Krutika Patel, Coffy Andrews**
 
  
 #### **Objective:** To determine if study time impacts test scores from a sample of 11 students 
