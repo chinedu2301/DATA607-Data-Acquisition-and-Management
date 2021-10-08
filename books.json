@@ -1,7 +1,7 @@
 [
 	{
 		"Title" : "R for Data Science",
-		"Author" : "Hadley Wickham, Gareth Grolemund",
+		"Author" : ["Hadley Wickham", "Gareth Grolemund"],
 		"ISBN" : "978-1-491-91039-9",
 		"Publisher" : "O'Reilly",
 		"Price" : "63.28"
@@ -10,7 +10,7 @@
 	
 	{
 		"Title" : "An Introduction to Statistical Learning",
-		"Author" : "Gareth James, Daniella Witten, Trevor Hastie, Robert Tibshirani",
+		"Author" : ["Gareth James", "Daniella Witten", "Trevor Hastie", "Robert Tibshirani"],
 		"ISBN" : "978-1-4614-7137-0",
 		"Publisher" : "Springer",
 		"Price" : "86.69"
