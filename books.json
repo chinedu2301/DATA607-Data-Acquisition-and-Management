@@ -4,7 +4,7 @@
 		"Author" : "Hadley Wickham, Gareth Grolemund",
 		"ISBN" : "978-1-491-91039-9",
 		"Publisher" : "O'Reilly",
-		"Price" : "63.28"
+		"Price" : 63.28
 		
 	},
 	
@@ -13,7 +13,7 @@
 		"Author" : "Gareth James, Daniella Witten, Trevor Hastie, Robert Tibshirani",
 		"ISBN" : "978-1-4614-7137-0",
 		"Publisher" : "Springer",
-		"Price" : "86.69"
+		"Price" : 86.69
 		
 	},
 	
@@ -22,7 +22,7 @@
 		"Author" : "Jared P. Lander",
 		"ISBN" : "978-0-13-454692-6",
 		"Publisher" : "Addison-Wesley",
-		"Price" : "39.00"
+		"Price" : 39.00
 		
 	}
 
