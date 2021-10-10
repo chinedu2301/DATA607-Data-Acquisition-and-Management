@@ -1,0 +1,109 @@
+---
+title: "CUNY SPS DATA607 Assignment 7"
+author: "Chinedu Onyeka"
+date: "October 8th, 2021"
+output:
+  html_document:
+    df_print: paged
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### **Question**  
+
+Pick three of your favorite books on one of your favorite subjects. At least one of the books should have more
+than one author. For each book, include the title, authors, and two or three other attributes that you find
+interesting.  
+
+Take the information that you’ve selected about these three books, and separately create three files which
+store the book’s information in HTML (using an html table), XML, and JSON formats (e.g. “books.html”,
+“books.xml”, and “books.json”). To help you better understand the different file structures, I’d prefer that you
+create each of these files “by hand” unless you’re already very comfortable with the file formats.
+Write R code, using your packages of choice, to load the information from each of the three sources into
+separate R data frames. Are the three data frames identical?  
+
+Your deliverable is the three source files and the R code. If you can, package your assignment solution up into
+an .Rmd file and publish to rpubs.com. [This will also require finding a way to make your three text files
+accessible from the web].  
+
+
+### *Solution*
+
+```{r load-libraries, message=FALSE}
+# load libraries
+library("tidyverse")
+library("xml2")
+library("jsonlite")
+library("rvest")
+library("XML")
+library("DT")
+```
+
+
+
+
+#### **HTML**  
+
+```{r}
+url_html<-"https://raw.githubusercontent.com/chinedu2301/DATA607-Data-Acquisition-and-Management/main/books.html"
+
+# read the html file and select the required nodes
+book_html <- read_html(url_html) %>% html_nodes(css = "table")
+
+# convert to table
+book_html <- html_table(book_html, header = TRUE)[[1]] %>% as.data.frame() %>% datatable()
+  
+# show the table
+book_html
+```
+
+#### **XML**  
+
+```{r}
+url_xml<-"https://raw.githubusercontent.com/chinedu2301/DATA607-Data-Acquisition-and-Management/main/books.xml"
+
+# read the xml file
+book_xml <- read_xml(url_xml)
+
+# parse the xml file and convert into a table
+book_xml <- xmlParse(book_xml) %>% xmlToDataFrame() %>% datatable()
+
+# show the table
+book_xml
+```
+
+#### **JSON**  
+
+```{r}
+url_json<-"https://raw.githubusercontent.com/chinedu2301/DATA607-Data-Acquisition-and-Management/main/books.json"
+
+# read the json file and convert to table
+book_json <- fromJSON(url_json) %>% as.data.frame() %>% datatable()
+
+# show the table
+book_json
+```
+*How they differ: *  
+Looking at the three tables, they look similar/identical to me. However, I will let r to determine if all three are identical:  
+
+```{r}
+
+html_vs_xml <- identical(book_html, book_xml)
+html_vs_json <- identical(book_html, book_json)
+xml_vs_json <- identical(book_xml, book_json)
+paste0("Are the html and xml books table identical? ", " Answer: ", html_vs_xml)
+paste0("Are the html and json books table identical? ", " Answer: ", html_vs_json)
+paste0("Are the xml and json books table identical? ", " Answer: ", xml_vs_json)
+```
+Even though the output looks similar for all three tables, they are not identical to one another. They have different internal structure and R handles them differently to produce an output that looks similar.
+
+
+
+
+
+
