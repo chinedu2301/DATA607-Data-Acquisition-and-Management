@@ -53,7 +53,7 @@ library("DT")
 url_html<-"https://raw.githubusercontent.com/chinedu2301/DATA607-Data-Acquisition-and-Management/main/books.html"
 
 # read the html file and select the required nodes
-book_html <- read_html(url_html) %>% html_nodes(css = "table")
+book_html <- read_html(url_html) %>% html_nodes("table")
 
 # convert to table
 book_html <- html_table(book_html, header = TRUE)[[1]] %>% as.data.frame() %>% datatable()
