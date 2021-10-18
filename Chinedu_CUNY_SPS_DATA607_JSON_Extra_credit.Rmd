@@ -1,0 +1,257 @@
+---
+title: "More Practice with JSON"
+author: "Coffy Andrews-Guo, Chinedu E. Onyeka"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+
+Source 
+[Github]()
+[RPubs](https://rpubs.com/chinedu2301/823475)
+
+
+## Load packages
+
+```{r setup, message=FALSE}
+library("jsonlite")
+library("plyr")
+library("dplyr")
+library("httr")
+library("purrr")
+```
+
+
+## Make a request to the API Server
+
+In this assignment, The Nobel Prize, JSON data was pulled using the Developer zone API from [https://www.nobelprize.org/about/developer-zone-2/](https://www.nobelprize.org/about/developer-zone-2/). A request for data with a GET function and return a list containing all of the information returned by the API server.
+```{r}
+resp <- GET("https://api.nobelprize.org/2.1/laureates?_ga=2.235250305.1628049656.1634086931-1839215677.1633638535")
+```
+
+A summary provides a "Status" on the success or failure of the API request, and it comes in the form of a number. A desired number 200 corresponds to a successful request. The content type indicates what form the data takes and this response has  the data in a json format.
+```{r}
+resp      # summary look at the resulting response
+```
+
+Converting the raw Unicode into a character vector resembling a JSON format.
+```{r results='hide'}
+rawToChar(resp$content)
+```
+
+From a character vector, it is converted into list data structure using the fromJSON().The `laureates' dataset is stored in the variables consisting of three elements.
+```{r}
+res = fromJSON(rawToChar(resp$content))
+names(res)
+```
+
+## Parse and generate data
+
+This analysis was developed by individually extracting list elements from the 'laureates' data frame using '[ ]' and  tidyverse function 
+
+```{r}
+res1 <- as.data.frame(res$laureates$id)   # column name 'Id'
+colnames(res1)[1] = "Laureates.Id"  # change column name by colname function
+head(res1, 4)
+```
+
+
+```{r}
+res2 <- as.data.frame(res$laureates$knownName)   # knownName
+colnames(res2)[1] = "KnownName"  # change column name by colname function
+res2 <- subset(res2, select = -c(se)) # drop columns 'se'
+
+head(res2, 4)
+```
+
+
+```{r}
+res3 <- as.data.frame(res$laureates$givenName)   # givenName
+colnames(res3)[1] = "GivenName"  # change column name by colname function
+res3 <- subset(res3, select = -c(se)) # drop columns 'se'
+
+head(res3, 4)
+```
+
+
+
+```{r}
+res4 <- as.data.frame(res$laureates$familyName)   # familyName
+colnames(res4)[1] = "FamilyName"  # change column name by colname function
+res4 <- subset(res4, select = -c(se)) # drop columns 'se'
+
+head(res4, 4)
+```
+
+
+```{r}
+res5 <- as.data.frame(res$laureates$fullName)   # fullName
+colnames(res5)[1] = "FullName"  # change column name by colname function
+res5 <- subset(res5, select = -c(se)) # drop columns 'se'
+
+head(res5, 4)
+```
+
+
+```{r}
+res6 <- as.data.frame(res$laureates$fileName)   # fileName
+colnames(res6)[1] = "FileName"  # change column name by colname function
+
+head(res6, 4)
+```
+
+
+```{r}
+res7 <- as.data.frame(res$laureates$gender)   # gender
+colnames(res7)[1] = "Gender"  # change column name by colname function
+
+head(res7, 4)
+```
+
+
+```{r}
+res8 <- as.data.frame(res$laureates$birth)   # birth.date
+colnames(res8)[1] = "BirthDate"  # change column name by colname function
+res8 <- subset(res8, select = -c(place)) # drop columns 'place'
+
+head(res8, 4)
+```
+
+
+```{r}
+res8.1 <- as.data.frame(res$laureates$birth$place$city)   # birthplacecity
+colnames(res8.1)[1] = "Birth.PlaceCity"  # change column name by colname function
+res8.1 <- subset(res8.1, select = -c(no, se)) # drop columns 'no' and 'se'
+
+head(res8.1, 4)
+```
+
+
+```{r}
+res8.2 <- as.data.frame(res$laureates$birth$place$country)   # birthplacecountry
+colnames(res8.2)[1] = "Birth.PlaceCountry"  # change column name by colname function
+res8.2 <- subset(res8.2, select = -c(no, se)) # drop columns 'no' and 'se'
+
+head(res8.2, 4)
+```
+
+
+```{r}
+res8.3 <- as.data.frame(res$laureates$birth$place$cityNow)   # birthplacecityNow
+colnames(res8.3)[1] = "Birth.PlaceCityNow"  # change column name by colname function
+res8.3 <- subset(res8.3, select = -c(no, se, sameAs)) # drop columns 'no', 'se', 'sameAs'
+
+head(res8.3, 4)
+```
+
+
+```{r}
+res8.4 <- as.data.frame(res$laureates$birth$place$countryNow)   # birthplacecountryNow
+colnames(res8.4)[1] = "Birth.PlaceCountryNow"  # change column name by colname function
+res8.4 <- subset(res8.4, select = -c(no, se, sameAs)) # drop columns 'no', 'se', and 'sameAs'
+
+head(res8.4, 4)
+```
+
+
+```{r}
+res8.5 <- as.data.frame(res$laureates$birth$place$continent)   # birthplacecontinent
+colnames(res8.5)[1] = "Birth.PlaceContinent"  # change column name by colname function
+res8.5 <- subset(res8.5, select = -c(no, se)) # drop columns 'no' and 'se'
+
+head(res8.5, 4)
+```
+
+
+```{r}
+res8.6 <- as.data.frame(res$laureates$birth$place$locationString)   # birthplacelocationString
+colnames(res8.6)[1] = "Birth.PlaceLocationString"  # change column name by colname function
+res8.6 <- subset(res8.6, select = -c(no, se)) # drop columns 'no' and 'se'
+
+head(res8.6, 4)
+```
+
+
+
+```{r}
+res9 <- as.data.frame(res$laureates$death)   # birthdeath
+colnames(res9)[1] = "Birth.Death"  # change column name by colname function
+res9 <- subset(res9, select = -c(place)) # drop columns 'place'
+
+head(res9, 4)
+```
+
+The Laureates data set contained only 25 values as shown on the embedded table using the `reactable function`.
+```{r}
+res_cbind = cbind.data.frame(res1, res2, res3, res4, res5, res6, res7, res8, res8.1, res8.2, res8.3, res8.4, res8.5, res8.6,res9)
+#head(res_cbind, 5)
+```
+
+```{r}
+library(reactable)
+
+reactable(res_cbind)
+```
+
+## Plot
+
+```{r}
+library(ggplot2)
+```
+
+## Gender Distribution
+
+### How many female and male laureates recieved nobel prizes based on this dataset? Female(1) and Male(24)
+```{r}
+country_gender <- res_cbind %>%
+  count(res_cbind$Gender)
+
+country_gender
+```
+
+
+```{r}
+ggplot(data = res_cbind, aes(x = Birth.PlaceContinent)) +
+  stat_count(width = 0.5, aes(fill = Gender)) +
+  labs(x = "Continent", y = "Count", 
+     title = "Nobel Prizes by Continent and Gender") 
+```
+
+
+## Continent
+
+### On which countinent where these Laureates born?
+```{r}
+country_plot <- res_cbind %>%
+  count(Birth.PlaceContinent)
+
+country_plot
+```
+
+
+```{r}
+ggplot(data = res_cbind, aes(x = Birth.PlaceContinent)) +
+  stat_count(width = 0.7, aes(fill = Birth.PlaceCountry)) +
+  labs(x = "Continent", y = "Count", 
+       title = "Nobel Prizes by Continent and Birth Place") +
+coord_flip()
+```
+
+
+## Birth Year
+
+### In what year did this dataset of Laureates were born?
+```{r}
+library("stringr")
+birth_year <- str_sub(res_cbind$BirthDate, 1, 4) 
+
+birth_year
+```
+
+```{r}
+ggplot(data = res_cbind, aes(x = Birth.PlaceContinent, birth_year)) +
+  labs(title = "Nobel Prizes by Birth Place Continent and Birth Year") +
+
+geom_point(colour = "blue", size = 3)
+```
+
