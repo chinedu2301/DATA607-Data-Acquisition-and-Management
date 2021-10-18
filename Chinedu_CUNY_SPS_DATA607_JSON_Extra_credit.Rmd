@@ -7,8 +7,8 @@ output: html_document
 
 
 Source 
-[Github]()
-[RPubs](https://rpubs.com/chinedu2301/823475)
+[Github](https://github.com/chinedu2301/DATA607-Data-Acquisition-and-Management/blob/main/Chinedu_CUNY_SPS_DATA607_JSON_Extra_credit.Rmd)
+[RPubs](https://rpubs.com/chinedu2301/823480)
 
 
 ## Load packages
