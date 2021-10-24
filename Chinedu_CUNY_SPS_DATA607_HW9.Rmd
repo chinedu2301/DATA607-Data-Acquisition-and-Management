@@ -1,0 +1,83 @@
+---
+title: "CUNY SPS DATA607 Assignment 9"
+author: "Chinedu Onyeka"
+date: "October 23rd, 2021"
+output:
+  html_document:
+    df_print: paged
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load the required libraries
+```{r libraries, message = FALSE}
+library(tidyverse)
+library(rvest)
+library(httr)
+library(jsonlite)
+library(rlist)
+```
+
+Make API calls
+
+```{r api-call}
+nyt_top_stories <- GET("https://api.nytimes.com/svc/topstories/v2/science.json?api-key=zYpgBL2MhyOOlSeLaDAKfQJQo2BeQZlz")
+```
+
+Inspect the status of the API requests
+```{r inspect-status}
+# Check the status of the api call
+nyt_top_stories
+```
+
+Since the status code is 200, it means it is OK.  
+
+```{r parse}
+# Parse the content of the response from the API call
+nyt_parse <- content(nyt_top_stories, "parse")
+nyt_parse_results <- nyt_parse$results
+```
+
+```{r flatten}
+nyt_top <- fromJSON(rawToChar(nyt_top_stories$content))
+#check the names of the ny_top
+names(nyt_top)
+```
+
+```{r}
+# Top stories data frame
+nyt_top_flat <- flatten(nyt_top$results) 
+nyt_top_flat <- as.data.frame(nyt_top_flat)
+nyt_top_flat
+```
+Some columns came in as a list and some as a dataframe.
+```{r multimedia}
+#Take a look at the multimedia dataframe which is a column in the 
+as.data.frame(nyt_top_flat$multimedia)
+```
+
+
+
+```{r}
+# Check the elements of des_facet column that came in as a list
+nyt_top_flat$des_facet
+```
+
+```{r}
+# Check the elements of the org_facet column that also came in as a list
+nyt_top_flat$org_facet
+```
+
+
+
+
+
+
+
+
+
