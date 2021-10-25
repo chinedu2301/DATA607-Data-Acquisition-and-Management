@@ -10,11 +10,14 @@ output:
     highlight: github
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+**Brief Description**  
+*This assignment uses the New York Times web API to obtain information about top science stories from NYT.*  
 
-Load the required libraries
+**Approach**  
+*To access the NYT web API, a developer account is needed. So, I created a developer account on the NYT website after which I requested an API key for their top science stories. To use the API to access the data, I used the GET() function from the `httr`package to make a GET request to the NYT server. After a successful GET request with a status code of `200` which signifies that the request was successful, I parsed the content of the JSON response, used the fromJSON() from `jsonlite` package to read the JSON file, flattened the output and then converted the results to dataframe.*  
+
+
+*Load the required libraries*
 ```{r libraries, message = FALSE}
 library(tidyverse)
 library(rvest)
@@ -23,19 +26,19 @@ library(jsonlite)
 library(rlist)
 ```
 
-Make API calls
+*Make API call*
 
 ```{r api-call}
 nyt_top_stories <- GET("https://api.nytimes.com/svc/topstories/v2/science.json?api-key=zYpgBL2MhyOOlSeLaDAKfQJQo2BeQZlz")
 ```
 
-Inspect the status of the API requests
+*Inspect the status of the API requests*
 ```{r inspect-status}
 # Check the status of the api call
 nyt_top_stories
 ```
 
-Since the status code is 200, it means it is OK.  
+*Since the status code is 200, it means it is OK.*  
 
 ```{r parse}
 # Parse the content of the response from the API call
@@ -55,7 +58,7 @@ nyt_top_flat <- flatten(nyt_top$results)
 nyt_top_flat <- as.data.frame(nyt_top_flat)
 nyt_top_flat
 ```
-Some columns came in as a list and some as a dataframe.
+*Some columns came in as a list and some as a dataframe.*
 ```{r multimedia}
 #Take a look at the multimedia dataframe which is a column in the 
 as.data.frame(nyt_top_flat$multimedia)
@@ -72,6 +75,9 @@ nyt_top_flat$des_facet
 # Check the elements of the org_facet column that also came in as a list
 nyt_top_flat$org_facet
 ```
+**Conclusion**  
+*The response from NYT server was a nested JSON file. When converted to dataframe, I found out that some columns contained lists while another column contained a dataframe. So a dataframe is a column in another dataframe. To access the content of that dataframe, I obtained the column containing a dataframe and displayed its results.*  
+*In conclusion, when a highly nested JSON file is read into a dataframe, some columns of the dataframe may be a list while some may be a dataframe. JSON files are very much effective in storing large amounts of unstructured data. No wonder most if not all responses of API calls in most websites returns a JSON file.* 
 
 
 
