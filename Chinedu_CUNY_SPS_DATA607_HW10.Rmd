@@ -1,0 +1,399 @@
+---
+title: "CUNY SPS DATA607 Assignment 10 - Sentiment Analysis"
+output:
+  html_document:
+    df_print: paged
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+## **Author: Chinedu Onyeka**
+### **Collaborators: Coffy Andrews-Guo, Krutika Patel**
+#### **Date: 10/30/2021**
+
+<center><h2> **Sentiment Analysis**</h2> </center> 
+### **Introduction**
+Sentiment Analysis is basically an automated process of determining and analyzing the sentiments (negative, positive, or neutral emotions) from a body of text by use of machine learning techniques. It has a wide range of applications including but not limited to customer sentiment analysis, brand improvement, reputation monitoring, and product improvement. This exercise uses the `tidytext` approach to text mining illustrated in the book: [Text Mining with R: A Tidy Approach](https://www.tidytextmining.com/sentiment.html). This approach is summarised in the picture below:  
+<center><img src = "https://www.github.com/chinedu2301/DATA607-Data-Acquisition-and-Management/blob/main/tidytext_approach_text_mining.jpg?raw=true" /></center>  
+<center>*source:* [Text Mining with R: A Tidy Approach](https://www.tidytextmining.com/sentiment.html)</center>  
+
+
+
+In summary, this approach as illustrated in the chart above uses the `unnest_tokens()` function from the <b>*tidytext*</b> package in R to tokenize (a process of splitting text data into tokens - one word per row) the data, and then apply dplyr functions to the tidy text to inner join it with the chosen sentiment lexicon after which the joined text data is summarized and visualized with ggplot2.  
+
+### **Part I: Recreate the Base Analysis from the textbook: **  
+This section basically recreates the exercise from chapter 2 of the textbook: "Text Mining with R: A Tidy Approach".  
+
+*Load libraries*  
+```{r load-libraries, message=FALSE}
+library(janeaustenr)
+library(tidyverse)
+library(tidytext) # for text mining
+library(gutenbergr)
+library(reshape2)
+library(wordcloud)
+library(igraph)
+library(ggraph)
+```
+
+*Load stop_words data*  
+```{r}
+data("stop_words")
+```
+
+
+*Get Sentiment Lexicons*
+```{r sentiment-lexicon, message=FALSE}
+get_sentiments("afinn") # assigns words with a score that runs between -5 and 5
+get_sentiments("bing") # categorizes words in a binary fashion into positive and negative categories
+get_sentiments("nrc") # categorizes words into positive, negative, fear, anger, disgust, anticipation, joy, 
+#sadness, surprise and trust
+```
+<b>*Sentiment Analysis with inner join*</b>  
+```{r}
+# tokenize the texts from Jane Austen books
+tidy_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(
+    linenumber = row_number(),
+    chapter = cumsum(str_detect(text, 
+                                regex("^chapter [\\divxlc]", 
+                                      ignore_case = TRUE)))) %>%
+  ungroup() %>%
+  unnest_tokens(word, text)
+# filter the joy words from the NRC lexicon
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+# filter the tidy text dataframe with text from the books for the words from "Emma" and then perform sentiment analysis.
+tidy_books %>%
+  filter(book == "Emma") %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+```
+<b>*Sentiment Analysis across all novels*</b>  
+```{r}
+jane_austen_sentiment <- tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(book, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+# plot the sentiment scores across the plot trajectory of each novel  
+ggplot(jane_austen_sentiment, aes(index, sentiment, fill = book)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~book, ncol = 2, scales = "free_x")
+```
+
+
+<b> *Comparing the three sentiment dictionaries* </b>  
+In this section, we use all three sentiment lexicons ("nrc", "afinn", and "bing") to examine how the sentiment changes across the narrative arc of `Pride and Prejudice`.  
+```{r}
+# filter the tidy text dataframe "tidy_books" for where book is "Pride & Prejudice"
+pride_prejudice <- tidy_books %>% filter(book == "Pride & Prejudice")
+# Using the "afinn" lexicon
+afinn <- pride_prejudice %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(index = linenumber %/% 80) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+# Using the "bing" and "nrc" lexicon
+bing_and_nrc <- bind_rows(
+  pride_prejudice %>% 
+    inner_join(get_sentiments("bing")) %>%
+    mutate(method = "Bing et al."),
+  pride_prejudice %>% 
+    inner_join(get_sentiments("nrc") %>% 
+                 filter(sentiment %in% c("positive", 
+                                         "negative"))
+    ) %>%
+    mutate(method = "NRC")) %>%
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment,
+              values_from = n,
+              values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+# Bind the three lexicons together and visualize
+bind_rows(afinn, 
+          bing_and_nrc) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+```
+
+Note: The three different lexicons for calculating sentiment give results that are different in an absolute sense but have relatively similar trajectories through the novel.  
+
+<b> *Most common positive and negative words* </b>  
+
+We can find out how much each word contributes to each sentiment.  
+```{r}
+bing_word_counts <- tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+bing_word_counts
+```
+We can visualize this with ggplot2  
+```{r}
+bing_word_counts %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10) %>% 
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(x = "Contribution to sentiment",
+       y = NULL)
+```
+
+<b> *Wordcloud* </b>  
+In this section, we look at the most common words in Jane Austen's work as a whole again, but this time as a wordcloud.  
+```{r}
+# wordcloud of most common words in Jane Austen's word with 100 maximum words
+tidy_books %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+```
+
+Using a different function like `comparison.cloud()` to visualize the wordcloud, we first convert the dataframe into a matrix by using the `acast()` function from the reshape2 package.  
+```{r}
+tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("#cf0a00","#1a954d"),max.words = 100)
+```
+
+NB: The size of a word's text in the figure above is in proportion to its frequency within its sentiment.  
+
+#### **Reference**  
+Silge, J., & Robinson, D. (2017). Text Mining with R: A Tidy Approach (First ed.). O'Reilly. https://www.tidytextmining.com
+
+
+### **Part II: Extend the Analysis to new corpus and new lexicon: **  
+
+In this part, we performed sentiment analysis on three books by James Hartwell from the gutenberg library. The three books are:
+<li> Title: "The Cat and the Mouse: A Book of Persian Fairy Tales"; EBook-No: 24473 </li>
+<li> Title: "The Enchanted Castle: A Book of Fairy Tales from Flowerland"; EBook-No: 27952 </li>
+<li> Title: "The Magic Bed: A Book of East Indian Fairy Tales"; EBook-No: 37708 </li>
+
+Also, we implemented another lexicon `loughran` for sentiment analysis. This lexicon is by Tim Loughran and Bill McDonald of the University of Notre Dame and it labels words with six possible sentiments in financial contexts: "negative", "positive", "litigious", "uncertainty", "constraining", or "superflous". So, we filtered the Loughran lexicon to use only the "positive" and "negative" labeling. More details on this lexicon can be found [here](https://www.rdrr.io/cran/textdata/man/lexicon_loughran.html)
+
+```{r}
+# download the book "The Cat and the Mouse: A Book of Persian Fairy Tales" from project gutenberg
+cat_mouse <- gutenberg_download(24473)
+names(cat_mouse) <- c("book", "text") # rename the column names so the gutenberg_id column is called book
+cat_mouse$book <- "The Cat and the Mouse" # replace the gutenberg_id with the book name so it can be intuitive
+
+# download the book "The Enchanted Castle: A Book of Fairy Tales from Flowerland" from project gutenberg
+enchanted_castle <- gutenberg_download(27952) 
+names(enchanted_castle) <- c("book", "text") # rename the column names so the gutenberg_id column is called book
+enchanted_castle$book <- "The Enchanted Castle"#replace the gutenberg_id with the book name so it can be intuitive
+
+# download the book "The Magic Bed: A Book of East Indian Fairy Tales" from project gutenberg
+magic_bed <- gutenberg_download(37708) 
+names(magic_bed) <- c("book", "text") # rename the column names so the gutenberg_id column is called book
+magic_bed$book <- "The Magic Bed" # replace the gutenberg_id with the book name so it can be intuitive
+
+# combine all three books into one dataset
+james_hartwell <- rbind(cat_mouse, enchanted_castle, magic_bed)
+james_hartwell
+```
+*Get Another sentiment lexicon: "loughran"*  
+```{r}
+# get loughran sentiment 
+get_sentiments("loughran")
+```
+<b> *Sentiment Analysis with inner join* </b>  
+
+```{r}
+# tokenize the texts from the three books by James Hartwell
+james_hartwell_tidy_books <- james_hartwell %>% group_by(book) %>%
+  mutate(
+    linenumber = row_number(),
+    chapter = cumsum(str_detect(text, 
+                                regex("^chapter [\\divxlc]", ignore_case = TRUE)))) %>%
+  ungroup() %>% unnest_tokens(word, text)
+
+# filter the joy words from the NRC lexicon
+nrc_joy <- get_sentiments("nrc") %>% filter(sentiment == "joy")
+
+# filter the tidy text dataframe in james_hartwell_tidy_books for words from "The Magic Bed"
+james_hartwell_tidy_books %>% filter(book == "The Magic Bed") %>% inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+#james_hartwell_tidy_books
+```
+
+<b>*Sentiment Analysis across all books by James Hartwell using the loughran lexicon*</b>   
+```{r}
+# get loughran sentiment and filter for only the positive and negative sentiments label
+loughran_sentiments <- get_sentiments("loughran") %>% filter(sentiment %in% c("positive", "negative"))
+# sentiment for James Hartwell books using the loughran lexicon
+james_hartwell_sentiment <- james_hartwell_tidy_books %>% inner_join(loughran_sentiments) %>%
+  count(book, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+  mutate(sentiment = positive - negative)
+james_hartwell_sentiment
+```
+*Visualize the sentiment across the plot trajectory of each book*  
+```{r}
+ggplot(james_hartwell_sentiment, aes(index, sentiment, fill = book)) + geom_col(show.legend = FALSE) + 
+  facet_wrap(~book, ncol = 3, scales = "free_x")
+```
+
+There appears to be more negative sentiment for the book "The Cat and the Mouse" compared to other books by James Hartwell.  
+
+<b>*Comparing the four different lexicons*</b>  
+In this section, I'll use all four sentiment lexicons("loughran", "nrc", "afinn", and "bing") to examine how the sentiment changes across the narrative arc of `The Cat and the Mouse`.  
+
+```{r}
+# filter the tidy text dataframe "james_hartwell_tidy_books" for where book is "The Cat and the Mouse"
+cat_and_mouse <- james_hartwell_tidy_books %>% filter(book == "The Cat and the Mouse")
+
+# Using the "afinn" lexicon
+afinn_cat_mouse <- cat_and_mouse %>% inner_join(get_sentiments("afinn")) %>%
+  group_by(index = linenumber %/% 80) %>% summarise(sentiment = sum(value)) %>%
+  mutate(method = "AFINN")
+
+# Using the loughran, bing, and nrc lexicons
+bing_and_nrc_and_loughran <- bind_rows(
+  cat_and_mouse %>% inner_join(get_sentiments("bing")) %>% mutate(method = "BING et al."),
+  cat_and_mouse %>% inner_join(get_sentiments("nrc") %>% 
+                                 filter(sentiment %in% c("positive", "negative"))) %>% mutate(method = "NRC"),
+  cat_and_mouse %>% inner_join(get_sentiments("loughran") %>% 
+                                 filter(sentiment %in% c("positive", "negative"))) %>% mutate(method = "LOUGHRAN")
+) %>% 
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+# Bind all four lexicons together and visualize with ggplot
+bind_rows(afinn_cat_mouse, bing_and_nrc_and_loughran) %>% ggplot(aes(index, sentiment, fill = method)) + 
+  geom_col(show.legend = FALSE) + facet_wrap(~method, ncol = 1, scales = "free_y")
+```
+
+From the sentiment analysis, the four(4) different lexicons give results that are different in absolute sense, but have similar trajectories through the book. We can see similar dips and peaks in sentiment at about the same locations in the book, but the absolute values of the sentiment are significantly different with the "AFINN" lexicon having the greatest absolute values with high positive values, while the lexicon from "LOUGHRAN" has the lowest absolute values. These differences in absolute values could be as a result of the differences in the number of positive or negative sentiment words in each lexicon. 
+
+```{r}
+# count of negative and positive sentiment in loughran lexicon
+get_sentiments("loughran") %>% filter(sentiment %in% c("positive", "negative")) %>% 
+  count(sentiment) %>% mutate(prop = round(n*100/sum(n),2))
+```
+```{r}
+# count of negative and positive sentiment in nrc lexicon
+get_sentiments("nrc") %>% filter(sentiment %in% c("positive", "negative")) %>% 
+  count(sentiment) %>% mutate(prop = round(n*100/sum(n),2))
+```
+```{r}
+# count of negative and positive sentiment in bing lexicon
+get_sentiments("bing") %>% count(sentiment) %>% mutate(prop = round(n*100/sum(n),2))
+```
+
+Looking at the count for positive and negative words in the "nrc", "loughran", and "bing" lexicons, we see that there are more negative words in all three(3) lexicons with the loughran lexicon having the least absolute number of negative words, but a significantly greater proportion of negative words compared to other lexicons.  
+
+<b> *Most common positive and negative words* </b>  
+```{r}
+# Using the bing lexicon
+bing_word_counts_cats <- james_hartwell_tidy_books %>% inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>% ungroup()
+bing_word_counts_cats
+```
+*Visualizing this with ggplot2*  
+
+```{r}
+bing_word_counts_cats %>% group_by(sentiment) %>% slice_max(n,n =10) %>% ungroup() %>%
+  mutate(word = reorder(word, n)) %>% ggplot(aes(n, word, fill = sentiment)) + geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") + labs(x = "Contribution to sentiment", y = NULL)
+```
+
+*We can also find out how each word contributes to each sentiment using the Loughran lexicon*
+```{r}
+# using the loughran lexicon
+loughran_word_counts_cats <- james_hartwell_tidy_books %>% inner_join(loughran_sentiments) %>%
+  count(word, sentiment, sort = TRUE) %>% ungroup()
+loughran_word_counts_cats
+```
+*Visualizing this with ggplot2: *  
+```{r}
+loughran_word_counts_cats %>% group_by(sentiment) %>% slice_max(n,n =10) %>% ungroup() %>%
+  mutate(word = reorder(word, n)) %>% ggplot(aes(n, word, fill = sentiment)) + geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") + labs(x = "Contribution to sentiment", y = NULL)
+```
+
+*Comparing the two lexicons, we can see that the word "poor" leads in contribution to negative sentiments for both lexicons in the book: The Cat and the Mouse", while the word "beautiful" leads in contribution to positive sentiments for both lexicons as well. *  
+
+<b> *Wordcloud * </b>  
+In this section, we consider the most common words in James Hartwell three books being considered in this analysis as a whole, but this time as a wordcloud.  
+```{r}
+# word cloud of most common words in James Hartwell's three books
+james_hartwell_tidy_books %>% anti_join(stop_words) %>% count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+```
+
+Using a different function like `comparison.cloud()` to visualize the wordcloud, as before, we first convert the dataframe into a matrix by using the `acast()` function from the reshape2 package.  
+
+<b>*wordcloud using the bing lexicon*</b>
+
+```{r}
+# using the bing lexicon
+james_hartwell_tidy_books %>% inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>% acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(color = c("#cf0a00","#1a954d"), max.words = 100)
+```
+
+<b>*wordcloud using the loughran lexicon*</b>
+
+```{r}
+# using the bing lexicon
+james_hartwell_tidy_books %>% inner_join(loughran_sentiments) %>%
+  count(word, sentiment, sort = TRUE) %>% acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(color = c("#cf0a00","#1a954d"), max.words = 100)
+```
+
+### **Conclusion**  
+Sentiment analysis is a very power tool to use to analyze the content of a bdoy of text to get insights on the most important words in the text. Also, the use of the right lexicon is also very important. In this analysis, we can see from the wordcloud that the Bing lexicon identified more positive words from the three books of James Hartwell compared to the Loughran lexicon that identified more negative words. It is necessary to not hurry conclusions but to analyze the content of the positive and negative components of the lexicons being used. From our analysis, we can see that the Loughran lexicon has about 86% of negative words while the Bing lexicon has about 75% negative words which may explain why there are more negative words highlighted by the Loughran lexicon. Hence, it is also crucial to have an understanding of the type of lexicon being used and to select the proper lexicon for this analysis. We feel that the Bing lexicon would be more suitable for this analysis because the original design of the Loughran lexicon is based on possible sentiments in financial context and the books considered here is nothing close to finance. Hence, we would feel more comfortable using the Bing lexicon in this context, but would prefer the Loughran lexicon for finance related corpus.
+
+
+#### **References**  
+Hartwell, J., & Neil, J.R. (n.d.). The Cat and the Mouse. https://www.gutenberg.org/ebooks/24473  
+Hartwell, J., & Neil, J.R. (n.d.). The Enchanted Castle. https://www.gutenberg.org/ebooks/27952  
+Hartwell, J., & Neil, J.R. (n.d.). The Magic Bed. https://www.gutenberg.org/ebooks/27952  
+Silge, J., & Robinson, D. (2017). Text Mining with R: A Tidy Approach (First ed.). O'Reilly. https://www.tidytextmining.com  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
