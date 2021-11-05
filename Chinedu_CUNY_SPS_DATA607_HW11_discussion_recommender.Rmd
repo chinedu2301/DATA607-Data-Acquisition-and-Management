@@ -1,0 +1,59 @@
+---
+title: "CUNY SPS DATA607 HW11 - Recommender Systems"
+author: "Chinedu Onyeka"
+date: "November 4th 2021"
+output: html_document
+---
+
+<center> <h2>Recommendation Systems </h2></center>
+Recommendation systems are also called Recommender Systems or Recommendation Engines. These systems essentially analyze users/customers behavior from activities on in-house platform (activities on a company’s platform) or external platforms (browsing history, etc) to predict what a Customer/User would like and then generate customized recommendations for those Customers/Users.  
+There are different approaches to developing a Recommender System such as Content Based Filtering (CBF – Based on what the user preference), Collaborative Filtering (CF – Based on preference of similar users), Neural Network (NN – Deep Learning), and some combination of CBF/CF hybrid methods.  
+
+It has vast applications across many different Industries such as e-Commerce, Media, Banking, Retail, Music/Movie Industries, etc. In e-Commerce, recommendation engines are used to recommend products that a customer would like to buy based on their purchase history, and or purchase history of other like buyers. It is also used in the Media industry to recommend articles that an individual would like to read based on their prior reading history, political inclinations, and preferences. Many companies like Amazon, Netflix, LinkedIn, Walmart, Facebook, Google, Spotify, etc employ recommendation engines.  
+
+Recommendation Systems have a broad range of benefits including but not limited to:  
+<li> Increased User/Customer Satisfaction </li>
+<li> Increased sales/revenue </li>
+<li> Reduced churn </li>
+<li> Increased loyalty, etc. </li>
+
+<center><h3>Scenario Design: Youtube</h3></center>
+<center>
+<img src = "https://github.com/chinedu2301/DATA607-Data-Acquisition-and-Management/blob/main/youtube_homepage.png?raw=true" />
+</center>
+ 
+#### **Target Users:**  
+
+Video content creators, Viewers, and Companies that want to advertise their products.
+
+#### **Key Goals:**  
+
+Help users/viewers to find video content that they like to watch.  
+
+#### **Achieving goals:**  
+
+Youtube achieve their goals by making video content available to those who need them. It essentially brings video content creators and viewers together and does not charge for basic use. Although there are paid services in Youtube, but the website is essentially free of charge for the most part. When viewers are watching video content(s), Youtube chips in a few seconds of advertisement videos and charge the company or entity whose products are being advertised.  
+
+#### **Recommendation Algorithm**  
+
+Youtube’s recommendation engine is quite complex especially because it has billions of contents and billions of users. It has evolved over the years since its inception in 2005. Initially, Youtube recommends the most popular/trending videos to users irrespective of user preferences, but this has long been abandoned as it does not make any scalable business sense. Currently, their recommendation engine is driven by Google Brain, and it uses Deep Neural Networks. The engine provides personalized recommendations based on users unique viewing habits and compares that with those of other similar users. 
+According to the paper presented in the 10th ACM Conference on Recommendation Systems, the system essentially consists of two (2) Neural Networks. The first one uses collaborative filtering to select a couple hundred of videos based on user’s viewing history while the second neural network is used to rank the couple hundreds of videos. The entirety of how the two Neural Network works is more complicated than I can even comprehend now. The method employed by Youtube essentially uses a cocktail of content-based filtering, collaborative filtering, and neural networks to develop one of the most power recommendation systems in the world.
+Youtube does not allow explicit video contents that are sexually gratifying and have a system in place to take such contents down. Below is a timeline of how Youtube's recommendation engine has evolved:  
+<figure>
+<img src = "https://github.com/chinedu2301/DATA607-Data-Acquisition-and-Management/blob/main/YouTube_Recommendations_V5.png?raw=true" />
+<figcaption><center> source: https://blog.youtube/inside-youtube/on-youtubes-recommendation-system/ </center></figcaption>
+</figure>
+
+ 
+#### **Recommendations**  
+
+The contents on Youtube platform are user generated and at such bound to be misleading at times. Youtube should do more to reducing the spread of false information on the platform. It came under fire sometime last year when the platform refused to take down video contents containing false US election results. Although dealing with fake or false information is a general problem across user generated social media platforms, I believe more can be done to improve the situation even though I understand it is a tough problem to handle.
+
+#### **References**
+https://blog.youtube/inside-youtube/on-youtubes-recommendation-system/  
+https://recsys.acm.org/recsys16/  
+https://www.youtube.com/playlist?list=PLaZufLfJumb8Nv9lOK2IVwaF21cM5rkoP  
+https://www.youtube.com/playlist?list=PLaZufLfJumb8Nv9lOK2IVwaF21cM5rkoP  
+https://www.quora.com/How-does-YouTubes-recommendation-algorithm-work  
+https://www.theverge.com/2020/11/12/21562910/youtube-2020-election-trump-misinformation-fake-news-recommendations  
+https://www.lftechnology.com/blog/recommendation-systems/
